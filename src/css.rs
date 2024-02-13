@@ -181,7 +181,7 @@ where
     // (char(' '),).map(|_| vec![])
     sep_end_by(
         declaration().skip(spaces()),
-        char::char(':').skip(spaces()),
+        char::char(';').skip(spaces()),
     )
 }
 
