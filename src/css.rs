@@ -90,8 +90,13 @@ where
     Input: Stream<Token = char>,
     Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
 {
-    todo!("you need to implement this");
-    (char(' ')).map(|_| vec![])
+    // todo!("you need to implement this");
+    // (char(' ')).map(|_| vec![])
+    (
+        spaces(),
+        many(rule().skip(spaces())),
+    )
+        .map(|(_, rules)| rules)
 }
 
 fn rule<Input>() -> impl Parser<Input, Output = Rule>
@@ -99,11 +104,21 @@ where
     Input: Stream<Token = char>,
     Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
 {
-    todo!("you need to implement this");
-    (char(' '),).map(|_| Rule {
-        selectors: vec![],
-        declarations: vec![],
-    })
+    // todo!("you need to implement this");
+    // (char(' '),).map(|_| Rule {
+    //     selectors: vec![],
+    //     declarations: vec![],
+    // })
+    (
+        selectors().skip(spaces()),
+        char::char('{').skip(spaces()),
+        declarations().skip(spaces()),
+        char::char('}'),
+    )
+        .map(|(selectors, _, declarations, _)| Rule {
+            selectors,
+            declarations,
+        })
 }
 
 fn selectors<Input>() -> impl Parser<Input, Output = Vec<Selector>>
