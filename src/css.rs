@@ -1,9 +1,5 @@
 use combine::{
-    choice,
-    error::StreamError,
-    many, many1, optional,
-    parser::char::{self, char, letter, newline, space, spaces},
-    sep_by, sep_end_by, ParseError, Parser, Stream,
+    choice, error::StreamError, many, many1, optional, parser::{char::{self, char, letter, newline, space, spaces}, choice}, sep_by, sep_end_by, ParseError, Parser, Stream
 };
 
 /// `Stylesheet` represents a single stylesheet.
@@ -115,8 +111,12 @@ where
     Input: Stream<Token = char>,
     Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
 {
-    todo!("you need to implement this");
-    (char(' '),).map(|_| vec![])
+    // todo!("you need to implement this");
+    // (char(' '),).map(|_| vec![])
+    sep_by(
+        simple_selector().skip(spaces()),
+        char::char(',').skip(spaces()),
+    )
 }
 
 fn simple_selector<Input>() -> impl Parser<Input, Output = SimpleSelector>
@@ -124,8 +124,52 @@ where
     Input: Stream<Token = char>,
     Input::Error: ParseError<Input::Token, Input::Range, Input::Position>,
 {
-    todo!("you need to implement this");
-    (char(' '),).map(|_| SimpleSelector::UniversalSelector)
+    // todo!("you need to implement this");
+    // (char(' '),).map(|_| SimpleSelector::UniversalSelector)
+    let universal_selector = char('*').map(|_| SimpleSelector::UniversalSelector);
+    let class_selector =
+        (char::char('.'), many1(letter())).map(|(_, class_name)| SimpleSelector::ClassSelector {
+            class_name: class_name,
+        });
+    let type_or_attribute_selector  = (
+        many1(letter()).skip(spaces()),
+        optional((
+            char::char('[').skip(spaces()),
+            many1(letter()),
+            choice((
+                char::char('='),
+                char::char('~')
+            )),
+            many(letter()),
+            char::char(']'),
+        )),
+    )
+        .and_then(|(tag_name, options)| match options {
+            Some((_, attribute, op, value, _)) => {
+                let op = match op {
+                    '=' => AttributeSelectorOp::Eq,
+                    '~' => AttributeSelectorOp::Contain,
+                    _ => {
+                        return Err(<Input::Error as ParseError<Input::Token, Input::Range, Input::Position>>::StreamError::message_static_message(
+                            "invalid attribute selector op"
+                        ))
+                    }
+                };
+                Ok(SimpleSelector::AttributeSelector {
+                    tag_name,
+                    attribute,
+                    op,
+                    value,
+                })
+            }
+            None => Ok(SimpleSelector::TypeSelector { tag_name }),
+        });
+
+    choice((
+        universal_selector,
+        class_selector,
+        type_or_attribute_selector,
+    ))
 }
 
 fn declarations<Input>() -> impl Parser<Input, Output = Vec<Declaration>>
