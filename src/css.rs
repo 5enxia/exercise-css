@@ -1,5 +1,12 @@
 use combine::{
-    choice, error::StreamError, many, many1, optional, parser::{char::{self, char, letter, newline, space, spaces}, choice}, sep_by, sep_end_by, ParseError, Parser, Stream
+    error::StreamError,
+    many, many1, optional,choice,
+    parser::{
+        char::{
+            self, char, letter, newline, space, spaces
+        },
+    },
+    sep_by, sep_end_by, ParseError, Parser, Stream
 };
 
 /// `Stylesheet` represents a single stylesheet.
@@ -141,7 +148,7 @@ where
 {
     // todo!("you need to implement this");
     // (char(' '),).map(|_| SimpleSelector::UniversalSelector)
-    let universal_selector = char('*').map(|_| SimpleSelector::UniversalSelector);
+    let universal_selector = char::char('*').map(|_| SimpleSelector::UniversalSelector);
     let class_selector =
         (char::char('.'), many1(letter())).map(|(_, class_name)| SimpleSelector::ClassSelector {
             class_name: class_name,
@@ -152,8 +159,8 @@ where
             char::char('[').skip(spaces()),
             many1(letter()),
             choice((
-                char::char('='),
-                char::char('~')
+                char::string("="),
+                char::string("~=")
             )),
             many(letter()),
             char::char(']'),
@@ -162,8 +169,8 @@ where
         .and_then(|(tag_name, options)| match options {
             Some((_, attribute, op, value, _)) => {
                 let op = match op {
-                    '=' => AttributeSelectorOp::Eq,
-                    '~' => AttributeSelectorOp::Contain,
+                    "=" => AttributeSelectorOp::Eq,
+                    "~=" => AttributeSelectorOp::Contain,
                     _ => {
                         return Err(<Input::Error as ParseError<Input::Token, Input::Range, Input::Position>>::StreamError::message_static_message(
                             "invalid attribute selector op"
